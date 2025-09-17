@@ -261,7 +261,8 @@ services:
         depends_on:
             - db
             - redis
-            - clickhouse
+            - clickhouse-0
+            - clickhouse-1
             - kafka
             - objectstorage
             - temporal
