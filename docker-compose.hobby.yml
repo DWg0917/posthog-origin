@@ -32,7 +32,7 @@ services:
         volumes:
             - redis7-data:/data
 
-    clickhouse:
+    clickhouse-0:
         #
         # Note: please keep the default version in sync across
         #       `posthog` and the `charts-clickhouse` repos
@@ -48,11 +48,33 @@ services:
             - ./posthog/posthog/idl:/idl
             - ./posthog/docker/clickhouse/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
             - ./posthog/docker/clickhouse/config.xml:/etc/clickhouse-server/config.xml
-            - ./posthog/docker/clickhouse/config.d/default.xml:/etc/clickhouse-server/config.d/default.xml
+            - ./posthog/docker/clickhouse/config.d/dn1.xml:/etc/clickhouse-server/config.d/dn1.xml
             - ./posthog/docker/clickhouse/users.xml:/etc/clickhouse-server/users.xml
             - ./posthog/docker/clickhouse/user_defined_function.xml:/etc/clickhouse-server/user_defined_function.xml
             - ./posthog/posthog/user_scripts:/var/lib/clickhouse/user_scripts
-            - clickhouse-data:/var/lib/clickhouse
+            - clickhouse-0-data:/var/lib/clickhouse
+
+    clickhouse-1:
+        #
+        # Note: please keep the default version in sync across
+        #       `posthog` and the `charts-clickhouse` repos
+        #
+        extends:
+            file: docker-compose.base.yml
+            service: clickhouse
+        restart: on-failure
+        depends_on:
+            - kafka
+            - zookeeper
+        volumes:
+            - ./posthog/posthog/idl:/idl
+            - ./posthog/docker/clickhouse/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+            - ./posthog/docker/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+            - ./posthog/docker/clickhouse/config.d/dn2.xml:/etc/clickhouse-server/config.d/dn2.xml
+            - ./posthog/docker/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+            - ./posthog/docker/clickhouse/user_defined_function.xml:/etc/clickhouse-server/user_defined_function.xml
+            - ./posthog/posthog/user_scripts:/var/lib/clickhouse/user_scripts
+            - clickhouse-1-data:/var/lib/clickhouse
 
     zookeeper:
         extends:
@@ -112,10 +134,19 @@ services:
             OTEL_SERVICE_NAME: 'posthog'
             OTEL_EXPORTER_OTLP_ENDPOINT: ''
             OTEL_SDK_DISABLED: 'true'
+            CLICKHOUSE_HOST: 'clickhouse-0'
+            CLICKHOUSE_DATABASE: 'posthog'
+            CLICKHOUSE_SECURE: 'false'
+            CLICKHOUSE_VERIFY: 'false'
+            CLICKHOUSE_API_USER: 'api'
+            CLICKHOUSE_API_PASSWORD: 'apipass'
+            CLICKHOUSE_APP_USER: 'app'
+            CLICKHOUSE_APP_PASSWORD: 'apppass'
         depends_on:
             - db
             - redis
-            - clickhouse
+            - clickhouse-0
+            - clickhouse-1
             - kafka
             - objectstorage
 
@@ -143,7 +174,8 @@ services:
             - db
             - redis
             - redis7
-            - clickhouse
+            - clickhouse-0
+            - clickhouse-1
             - kafka
             - objectstorage
 
@@ -297,7 +329,8 @@ volumes:
     zookeeper-logs:
     objectstorage:
     postgres-data:
-    clickhouse-data:
+    clickhouse-0-data:
+    clickhouse-1-data:
     caddy-data:
     caddy-config:
     redis-data:

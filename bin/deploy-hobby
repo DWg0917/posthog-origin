@@ -62,15 +62,6 @@ echo "Ok! We'll take it from here 🚀"
 echo "Making sure any stack that might exist is stopped"
 sudo -E docker-compose -f docker-compose.yml stop &> /dev/null || true
 
-# send log of this install for continued support!
-curl -o /dev/null -L --header "Content-Type: application/json" -d "{
-    \"api_key\": \"sTMFPsFhdP1Ssg\",
-    \"distinct_id\": \"${DOMAIN}\",
-    \"properties\": {\"domain\": \"${DOMAIN}\"},
-    \"type\": \"capture\",
-    \"event\": \"magic_curl_install_start\"
-}" https://us.i.posthog.com/batch/ &> /dev/null
-
 # update apt cache
 echo "Grabbing latest apt caches"
 sudo apt update
@@ -79,7 +70,7 @@ sudo apt update
 echo "Installing PostHog 🦔 from Github"
 sudo apt install -y git
 # try to clone - if folder is already there pull latest for that branch
-git clone https://github.com/PostHog/posthog.git &> /dev/null || true
+git clone https://github.com/DWg0917/posthog-origin.git &> /dev/null || true
 cd posthog
 
 if [[ "$POSTHOG_APP_TAG" = "latest-release" ]]
@@ -141,12 +132,12 @@ EOF
 
 # Download GeoLite2-City.mmdb if it doesn't exist
 echo "Downloading GeoIP database file"
-apt-get update && 
-apt-get install -y --no-install-recommends curl ca-certificates brotli && 
-mkdir -p ./share && 
-if [ ! -f ./share/GeoLite2-City.mmdb ]; then 
-    curl -L 'https://mmdbcdn.posthog.net/' --http1.1 | brotli --decompress --output=./share/GeoLite2-City.mmdb && 
-    echo '{\"date\": \"'$(date +%Y-%m-%d)'\"}' > ./share/GeoLite2-City.json; 
+apt-get update &&
+apt-get install -y --no-install-recommends curl ca-certificates brotli &&
+mkdir -p ./share &&
+if [ ! -f ./share/GeoLite2-City.mmdb ]; then
+    curl -L 'https://mmdbcdn.posthog.net/' --http1.1 | brotli --decompress --output=./share/GeoLite2-City.mmdb &&
+    echo '{\"date\": \"'$(date +%Y-%m-%d)'\"}' > ./share/GeoLite2-City.json;
     chmod 644 ./share/GeoLite2-City.mmdb &&
     chmod 644 ./share/GeoLite2-City.json
 fi
@@ -173,24 +164,41 @@ chmod +x compose/temporal-django-worker
 # write wait script
 cat > compose/wait <<EOF
 #!/usr/bin/env python3
-
 import socket
 import time
 
-def loop():
-    print("Waiting for ClickHouse and Postgres to be ready")
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect(('clickhouse', 9000))
-        print("Clickhouse is ready")
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect(('db', 5432))
-        print("Postgres is ready")
-    except ConnectionRefusedError as e:
-        time.sleep(5)
-        loop()
+CLICKHOUSE_NODES = ['clickhouse-0', 'clickhouse-1']
+POSTGRES_NODE = ('db', 5432)
 
-loop()
+def wait_for_clickhouse():
+    print("Waiting for all ClickHouse nodes to be ready...")
+    for node in CLICKHOUSE_NODES:
+        while True:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.connect((node, 9000))
+                print(f"ClickHouse node {node} is ready")
+                break
+            except (ConnectionRefusedError, socket.gaierror):
+                print(f"ClickHouse node {node} not ready, retrying in 5s...")
+                time.sleep(5)
+
+def wait_for_postgres():
+    print("Waiting for Postgres to be ready...")
+    while True:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect(POSTGRES_NODE)
+            print("Postgres is ready")
+            break
+        except (ConnectionRefusedError, socket.gaierror):
+            print("Postgres not ready, retrying in 5s...")
+            time.sleep(5)
+
+if __name__ == "__main__":
+    wait_for_clickhouse()
+    wait_for_postgres()
+
 EOF
 chmod +x compose/wait
 
@@ -225,7 +233,7 @@ rm -f docker-compose.yml
 cp posthog/docker-compose.base.yml docker-compose.base.yml
 cp posthog/docker-compose.hobby.yml docker-compose.yml
 echo "Starting the stack!"
-sudo -E docker-compose -f docker-compose.yml up -d --no-build --pull always
+sudo -E docker-compose -f docker-compose.yml up -d --no-build
 
 echo "We will need to wait ~5-10 minutes for things to settle down, migrations to finish, and TLS certs to be issued"
 echo ""
