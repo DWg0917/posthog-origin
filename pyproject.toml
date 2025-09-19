@@ -236,7 +236,7 @@ dev = [
 required-version = ">=0.7.0"
 
 [tool.uv.sources]
-infi-clickhouse-orm = { git = "https://github.com/DWg0917/infi.clickhouse_orm", rev = "27beda306f0c5d0ed4b465c021314dc8fa987ec7" }
+infi-clickhouse-orm = { git = "https://github.com/DWg0917/infi.clickhouse_orm", branch = "develop" }
 
 
 [tool.black]

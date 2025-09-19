@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = "==3.11.*"
 
 [[package]]
@@ -2540,7 +2540,7 @@ wheels = [
 [[package]]
 name = "infi-clickhouse-orm"
 version = "2.1.0.post19"
-source = { git = "https://github.com/DWg0917/infi.clickhouse_orm?rev=27beda306f0c5d0ed4b465c021314dc8fa987ec7#27beda306f0c5d0ed4b465c021314dc8fa987ec7" }
+source = { git = "https://github.com/DWg0917/infi.clickhouse_orm?branch=develop#2317cf8ea66886b30cbebe562ccfcea080dfca36" }
 dependencies = [
     { name = "iso8601" },
     { name = "pytz" },
@@ -4332,7 +4332,7 @@ requires-dist = [
     { name = "gspread", specifier = "==6.2.1" },
     { name = "gunicorn", specifier = "==20.1.0" },
     { name = "hogql-parser", specifier = "==1.2.0" },
-    { name = "infi-clickhouse-orm", git = "https://github.com/DWg0917/infi.clickhouse_orm?rev=27beda306f0c5d0ed4b465c021314dc8fa987ec7" },
+    { name = "infi-clickhouse-orm", git = "https://github.com/DWg0917/infi.clickhouse_orm?branch=develop" },
     { name = "jsonref", specifier = "==1.1.0" },
     { name = "kafka-python", specifier = "==2.0.2" },
     { name = "kombu", specifier = "==5.3.2" },
