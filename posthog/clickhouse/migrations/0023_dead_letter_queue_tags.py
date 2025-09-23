@@ -3,8 +3,8 @@ from posthog.clickhouse.dead_letter_queue import DEAD_LETTER_QUEUE_TABLE_MV_SQL,
 from posthog.settings import CLICKHOUSE_CLUSTER
 
 operations = [
-    run_sql_with_exceptions(f"DROP TABLE events_dead_letter_queue_mv ON CLUSTER '{CLICKHOUSE_CLUSTER}'"),
-    run_sql_with_exceptions(f"DROP TABLE kafka_events_dead_letter_queue ON CLUSTER '{CLICKHOUSE_CLUSTER}'"),
+    run_sql_with_exceptions(f"DROP TABLE IF EXISTS events_dead_letter_queue_mv ON CLUSTER '{CLICKHOUSE_CLUSTER}'"),
+    run_sql_with_exceptions(f"DROP TABLE IF EXISTS kafka_events_dead_letter_queue ON CLUSTER '{CLICKHOUSE_CLUSTER}'"),
     run_sql_with_exceptions(
         f"ALTER TABLE events_dead_letter_queue ON CLUSTER '{CLICKHOUSE_CLUSTER}' ADD COLUMN IF NOT EXISTS tags Array(VARCHAR) AFTER error"
     ),
