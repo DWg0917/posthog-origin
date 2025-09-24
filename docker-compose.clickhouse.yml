@@ -1,0 +1,111 @@
+# `docker-compose` file used ONLY for hobby deployments.
+#
+# Please take a look at https://posthog.com/docs/self-host/deploy/hobby
+# for more info.
+#
+# PostHog has sunset support for self-hosted K8s deployments.
+# See: https://posthog.com/blog/sunsetting-helm-support-posthog
+#
+
+services:
+    clickhouse-keeper:
+        container_name: clickhouse-keeper
+        image: clickhouse/clickhouse-keeper:24.3.5.46-alpine
+        hostname: clickhouse-keeper
+        volumes:
+            - ./posthog/docker/clickhouse/config.d/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+            - clickhouse-keeper-data:/var/log/clickhouse-keeper
+        ports:
+            - '9181:9181'
+
+    clickhouse-coordinator:
+        #
+        # Note: please keep the default version in sync across
+        #       `posthog` and the `charts-clickhouse` repos
+        #
+        extends:
+            file: docker-compose.base.yml
+            service: clickhouse
+        restart: on-failure
+        depends_on:
+            - kafka
+            - clickhouse-keeper
+        volumes:
+            - ./posthog/posthog/idl:/idl
+            - ./posthog/docker/clickhouse/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+            - ./posthog/docker/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+            - ./posthog/docker/clickhouse/config.d/cluster-cn.xml:/etc/clickhouse-server/config.d/cluster-cn.xml
+            - ./posthog/docker/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+            - ./posthog/docker/clickhouse/user_defined_function.xml:/etc/clickhouse-server/user_defined_function.xml
+            - ./posthog/posthog/user_scripts:/var/lib/clickhouse/user_scripts
+            - clickhouse-coordinator-data:/var/lib/clickhouse
+    clickhouse-data1:
+        #
+        # Note: please keep the default version in sync across
+        #       `posthog` and the `charts-clickhouse` repos
+        #
+        extends:
+            file: docker-compose.base.yml
+            service: clickhouse
+        restart: on-failure
+        depends_on:
+            - kafka
+            - clickhouse-keeper
+        volumes:
+            - ./posthog/posthog/idl:/idl
+            - ./posthog/docker/clickhouse/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+            - ./posthog/docker/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+            - ./posthog/docker/clickhouse/config.d/cluster-dn1.xml:/etc/clickhouse-server/config.d/cluster-dn1.xml
+            - ./posthog/docker/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+            - ./posthog/docker/clickhouse/user_defined_function.xml:/etc/clickhouse-server/user_defined_function.xml
+            - ./posthog/posthog/user_scripts:/var/lib/clickhouse/user_scripts
+            - clickhouse-data1-data:/var/lib/clickhouse
+    clickhouse-data2:
+        #
+        # Note: please keep the default version in sync across
+        #       `posthog` and the `charts-clickhouse` repos
+        #
+        extends:
+            file: docker-compose.base.yml
+            service: clickhouse
+        restart: on-failure
+        depends_on:
+            - kafka
+            - clickhouse-keeper
+        volumes:
+            - ./posthog/posthog/idl:/idl
+            - ./posthog/docker/clickhouse/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+            - ./posthog/docker/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+            - ./posthog/docker/clickhouse/config.d/cluster-dn2.xml:/etc/clickhouse-server/config.d/cluster-dn2.xml
+            - ./posthog/docker/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+            - ./posthog/docker/clickhouse/user_defined_function.xml:/etc/clickhouse-server/user_defined_function.xml
+            - ./posthog/posthog/user_scripts:/var/lib/clickhouse/user_scripts
+            - clickhouse-data2-data:/var/lib/clickhouse
+
+    # clickhouse:
+    #     #
+    #     # Note: please keep the default version in sync across
+    #     #       `posthog` and the `charts-clickhouse` repos
+    #     #
+    #     extends:
+    #         file: docker-compose.base.yml
+    #         service: clickhouse
+    #     restart: on-failure
+    #     depends_on:
+    #         - kafka
+    #         - zookeeper
+    #     volumes:
+    #         - ./posthog/posthog/idl:/idl
+    #         - ./posthog/docker/clickhouse/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    #         - ./posthog/docker/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+    #         - ./posthog/docker/clickhouse/config.d/default.xml:/etc/clickhouse-server/config.d/default.xml
+    #         - ./posthog/docker/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+    #         - ./posthog/docker/clickhouse/user_defined_function.xml:/etc/clickhouse-server/user_defined_function.xml
+    #         - ./posthog/posthog/user_scripts:/var/lib/clickhouse/user_scripts
+    #         - clickhouse-data:/var/lib/clickhouse
+
+volumes:
+    clickhouse-keeper-data:
+    clickhouse-coordinator-data:
+    clickhouse-data1-data:
+    clickhouse-data2-data:
